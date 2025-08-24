@@ -74,19 +74,21 @@ This project is intentionally simple and self-contained in a single index.html f
 
 - Loading data from localStorage or initializing with a default template.
 
-Saving any changes back to localStorage.
+-- Saving any changes back to localStorage.
 
-Rendering and updating the tables and charts.
+-- Rendering and updating the tables and charts.
 
-Handling all user interactions and calculations in real-time.
+-- Handling all user interactions and calculations in real-time.
 
-Data Structure: The budget data is stored in a single JavaScript object which has arrays for income, bills, expenses, savings, and debt.
+-- Data Structure: The budget data is stored in a single JavaScript object which has arrays for income, bills, expenses, savings, and debt.
 
 # ✏️ Customization
 You can easily customize the default budget template by modifying the defaultBudgetData object within the main <script> tag in the index.html file.
 
 // --- INITIAL DATA (Default template) ---
+
 const defaultBudgetData = {
+    
     income: [
         { category: 'Salary', budget: 650000, actual: 650000 },
         // ... add or change income sources
@@ -103,7 +105,7 @@ Fahed Ahmad
 
 Email: fahedahmad2002@gmail.com
 
-LinkedIn: linkedin.com/in/fahed-ahmad
+LinkedIn: https://www.linkedin.com/in/fahed-ahmad
 
 # 📄 License
 This project is open-source and available under the MIT License.
