@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Budget Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .main-title {
+            font-family: 'Georgia', serif;
+        }
+        .section-header {
+            text-align: center;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 8px;
+            margin-bottom: 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+        }
+        .header-blue { background-color: #e0f2fe; color: #0284c7; }
+        .header-green { background-color: #dcfce7; color: #16a34a; }
+        .header-yellow { background-color: #fefce8; color: #ca8a04; }
+        .header-red { background-color: #fee2e2; color: #dc2626; }
+        .header-purple { background-color: #f5f3ff; color: #7c3aed; }
+        
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        input[type="number"], input[type="text"], input[type="date"], select {
+            width: 100%;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            padding: 0.5rem;
+        }
+        input[type="number"] { text-align: right; }
+        input:focus, select:focus {
+            outline: 2px solid #3b82f6;
+            background-color: white;
+        }
+        .currency-symbol { color: #64748b; }
+        
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+        }
+        .bar-chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        table {
+            table-layout: fixed;
+            width: 100%;
+        }
+        td, th {
+            word-wrap: break-word;
+        }
+        .add-btn {
+            background-color: #f1f5f9;
+            color: #475569;
+            width: 100%;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .add-btn:hover {
+            background-color: #e2e8f0;
+        }
+        .delete-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem;
+            color: #94a3b8;
+        }
+        .delete-btn:hover {
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-screen-2xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="main-title text-4xl md:text-5xl font-bold text-gray-800"><span id="userNameDisplay">Fahed</span>'s <span id="monthDisplay">August</span></h1>
+            <p class="text-gray-500 uppercase tracking-widest mt-2">Budget Dashboard</p>
+        </header>
+
+        <!-- Main Content Area -->
+        <div class="space-y-6">
+            <!-- Row 1: Overview and Summaries -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2">
+                    <div class="card h-full">
+                        <h2 class="section-header header-purple">Overview</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                            <div>
+                                <label class="font-semibold text-gray-600 block mb-1">Budget Period</label>
+                                <input type="date" id="startDate" value="2025-08-01">
+                                <input type="date" id="endDate" value="2025-08-31" class="mt-1">
+                            </div>
+                            <div>
+                                <label for="currencySelect" class="font-semibold text-gray-600 block mb-1">Currency</label>
+                                <select id="currencySelect">
+                                    <option value="₹" data-code="INR" selected>₹ (INR)</option>
+                                    <option value="$" data-code="USD">$ (USD)</option>
+                                    <option value="€" data-code="EUR">€ (EUR)</option>
+                                    <option value="£" data-code="GBP">£ (GBP)</option>
+                                    <option value="¥" data-code="JPY">¥ (JPY)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="userName" class="font-semibold text-gray-600 block mb-1">Your Name</label>
+                                <input type="text" id="userName" value="Fahed">
+                            </div>
+                            <div>
+                                <label for="startBalance" class="font-semibold text-gray-600 block mb-1">Start Balance</label>
+                                <div class="relative"><span class="currency-symbol absolute left-3 top-1/2 -translate-y-1/2"></span><input type="number" id="startBalance" value="0" class="pl-7"></div>
+                            </div>
+                             <div class="md:col-span-2">
+                                <button id="resetButton" class="w-full bg-red-500 text-white font-bold py-2 px-4 rounded hover:bg-red-700 transition-colors mt-2">Reset to Default</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-6">
+                    <div class="card text-center"><h2 class="font-semibold text-gray-500 uppercase tracking-wider text-sm">Days Left</h2><p id="daysLeft" class="text-4xl font-bold text-blue-600 mt-2"></p></div>
+                    <div class="card text-center"><h2 class="font-semibold text-gray-500 uppercase tracking-wider text-sm">Left to Budget</h2><p id="leftToBudget" class="text-4xl font-bold text-green-600 mt-2"></p></div>
+                </div>
+            </div>
+
+            <!-- Row 2: Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="card">
+                    <h2 class="section-header header-purple">Budget vs Actual</h2>
+                    <div class="bar-chart-container"><canvas id="budgetVsActualChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <h2 class="section-header header-green">Income Summary</h2>
+                    <div class="chart-container"><canvas id="incomeSummaryChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <h2 class="section-header header-red">Actual Breakdown</h2>
+                    <div class="chart-container"><canvas id="actualBreakdownChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Row 3: Income, Savings -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="card">
+                    <h2 class="section-header header-green">Income</h2>
+                    <table id="incomeTable" class="w-full text-sm">
+                        <thead><tr class="text-left text-gray-500"><th class="pb-2 font-medium">Category</th><th class="text-right pb-2 font-medium w-1/3">Budget</th><th class="text-right pb-2 font-medium w-1/3">Actual</th><th class="w-12"></th></tr></thead>
+                        <tbody></tbody>
+                        <tfoot><tr class="font-bold border-t-2"><td class="pt-2">Total</td><td id="incomeBudgetTotal" class="text-right pt-2"></td><td id="incomeActualTotal" class="text-right pt-2"></td><td></td></tr></tfoot>
+                    </table>
+                    <button id="addIncome" class="add-btn mt-4">+ Add Item</button>
+                </div>
+                <div class="card">
+                    <h2 class="section-header header-green">Savings</h2>
+                    <table id="savingsTable" class="w-full text-sm">
+                        <thead><tr class="text-left text-gray-500"><th class="pb-2 font-medium">Category</th><th class="text-right pb-2 font-medium w-1/3">Budget</th><th class="text-right pb-2 font-medium w-1/3">Actual</th><th class="w-12"></th></tr></thead>
+                        <tbody></tbody>
+                        <tfoot><tr class="font-bold border-t-2"><td class="pt-2">Total</td><td id="savingsBudgetTotal" class="text-right pt-2"></td><td id="savingsActualTotal" class="text-right pt-2"></td><td></td></tr></tfoot>
+                    </table>
+                    <button id="addSaving" class="add-btn mt-4">+ Add Item</button>
+                </div>
+            </div>
+
+            <!-- Row 4: Bills, Expenses -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                 <div class="card">
+                    <h2 class="section-header header-yellow">Bills</h2>
+                    <table id="billsTable" class="w-full text-sm">
+                        <thead><tr class="text-left text-gray-500"><th class="pb-2 font-medium">Category</th><th class="pb-2 font-medium w-1/6">Due</th><th class="text-right pb-2 font-medium w-1/4">Budget</th><th class="text-right pb-2 font-medium w-1/4">Actual</th><th class="w-12"></th></tr></thead>
+                        <tbody></tbody>
+                        <tfoot><tr class="font-bold border-t-2"><td colspan="2" class="pt-2">Total</td><td id="billsBudgetTotal" class="text-right pt-2"></td><td id="billsActualTotal" class="text-right pt-2"></td><td></td></tr></tfoot>
+                    </table>
+                    <button id="addBill" class="add-btn mt-4">+ Add Item</button>
+                </div>
+                <div class="card">
+                    <h2 class="section-header header-red">Expenses</h2>
+                    <table id="expensesTable" class="w-full text-sm">
+                        <thead><tr class="text-left text-gray-500"><th class="pb-2 font-medium">Category</th><th class="text-right pb-2 font-medium w-1/4">Budget</th><th class="text-right pb-2 font-medium w-1/4">Actual</th><th class="text-right pb-2 font-medium w-1/4">Left</th><th class="w-12"></th></tr></thead>
+                        <tbody></tbody>
+                        <tfoot><tr class="font-bold border-t-2"><td class="pt-2">Total</td><td id="expensesBudgetTotal" class="text-right pt-2"></td><td id="expensesActualTotal" class="text-right pt-2"></td><td id="expensesLeftTotal" class="text-right pt-2"></td><td></td></tr></tfoot>
+                    </table>
+                    <button id="addExpense" class="add-btn mt-4">+ Add Item</button>
+                </div>
+            </div>
+            
+            <!-- Row 5: Debt, Contact -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="card">
+                    <h2 class="section-header header-red">Debt</h2>
+                    <table id="debtTable" class="w-full text-sm">
+                        <thead><tr class="text-left text-gray-500"><th class="pb-2 font-medium">Category</th><th class="text-right pb-2 font-medium w-1/3">Budget</th><th class="text-right pb-2 font-medium w-1/3">Actual</th><th class="w-12"></th></tr></thead>
+                        <tbody></tbody>
+                        <tfoot><tr class="font-bold border-t-2"><td class="pt-2">Total</td><td id="debtBudgetTotal" class="text-right pt-2"></td><td id="debtActualTotal" class="text-right pt-2"></td><td></td></tr></tfoot>
+                    </table>
+                    <button id="addDebt" class="add-btn mt-4">+ Add Item</button>
+                </div>
+                 <div class="card">
+                    <h2 class="section-header header-blue">Contact Me</h2>
+                    <div class="space-y-4 text-sm">
+                        <div>
+                            <p class="font-semibold text-gray-700">Name:</p>
+                            <p class="text-gray-600">Fahed Ahmad</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-700">Mail ID:</p>
+                            <a href="mailto:fahedahmad2002@gmail.com" class="text-blue-600 hover:underline">fahedahmad2002@gmail.com</a>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-700">LinkedIn:</p>
+                            <a href="https://www.linkedin.com/in/fahed-ahmad" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">linkedin.com/in/fahed-ahmad</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- INITIAL DATA (Default template) ---
+        const defaultBudgetData = {
+            income: [ { category: 'Salary', budget: 650000, actual: 650000 }, { category: 'Freelance', budget: 50000, actual: 0 }, { category: 'Other', budget: 0, actual: 0 }, ],
+            bills: [ { category: 'Rent', due: '1st', budget: 180000, actual: 180000 }, { category: 'Electricity', due: '15th', budget: 25000, actual: 25000 }, { category: 'Water', due: '15th', budget: 5000, actual: 5000 }, { category: 'Internet', due: '20th', budget: 10000, actual: 10000 }, { category: 'Subscriptions', due: '5th', budget: 2000, actual: 2000 }, ],
+            expenses: [ { category: 'Groceries', budget: 60000, actual: 60000 }, { category: 'Eating out', budget: 30000, actual: 30000 }, { category: 'Transport', budget: 20000, actual: 20000 }, { category: 'Shopping', budget: 40000, actual: 40000 }, { category: 'Entertainment', budget: 20000, actual: 20000 }, ],
+            savings: [ { category: 'Emergencies', budget: 35000, actual: 35000 }, { category: 'Vacation', budget: 40000, actual: 40000 }, { category: 'Investment', budget: 50000, actual: 50000 }, ],
+            debt: [ { category: 'Car Loan', budget: 25000, actual: 25000 }, { category: 'Credit Card', budget: 18000, actual: 18000 }, ]
+        };
+
+        // --- LOAD & SAVE DATA ---
+        let budgetData = JSON.parse(localStorage.getItem('budgetDashboardData')) || JSON.parse(JSON.stringify(defaultBudgetData));
+
+        // --- GLOBAL VARIABLES ---
+        let currency = '₹';
+        let charts = {};
+
+        // --- FORMATTING ---
+        const formatCurrency = (amount) => {
+            const selectedOption = document.getElementById('currencySelect').selectedOptions[0];
+            const currencyCode = selectedOption.dataset.code;
+            const locale = currencyCode === 'INR' ? 'en-IN' : 'en-US';
+
+            try {
+                return new Intl.NumberFormat(locale, { style: 'currency', currency: currencyCode, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+            } catch (e) {
+                return `${currency}${amount.toFixed(2)}`;
+            }
+        };
+
+        // --- TABLE RENDERING ---
+        function createEditableRow(data, type) {
+            const row = document.createElement('tr');
+            row.className = "border-b border-gray-200 last:border-b-0";
+            
+            // Category Cell
+            const categoryCell = document.createElement('td');
+            categoryCell.className = "py-2 pr-2";
+            categoryCell.innerHTML = `<input type="text" value="${data.category}">`;
+            categoryCell.querySelector('input').onchange = (e) => { data.category = e.target.value; updateAll(); };
+            row.appendChild(categoryCell);
+
+            // Due Date Cell (for bills)
+            if (type === 'bills') {
+                const dueCell = document.createElement('td');
+                dueCell.className = "py-2 px-2";
+                dueCell.innerHTML = `<input type="text" value="${data.due}">`;
+                dueCell.querySelector('input').onchange = (e) => { data.due = e.target.value; };
+                row.appendChild(dueCell);
+            }
+
+            // Budget Cell
+            const budgetCell = document.createElement('td');
+            budgetCell.className = "py-2 px-2";
+            budgetCell.innerHTML = `<div class="relative"><span class="currency-symbol absolute left-3 top-1/2 -translate-y-1/2"></span><input type="number" value="${data.budget}" class="pl-7"></div>`;
+            budgetCell.querySelector('input').oninput = (e) => { data.budget = parseFloat(e.target.value) || 0; updateAll(); };
+            row.appendChild(budgetCell);
+
+            // Actual Cell
+            const actualCell = document.createElement('td');
+            actualCell.className = "py-2 pl-2";
+            actualCell.innerHTML = `<div class="relative"><span class="currency-symbol absolute left-3 top-1/2 -translate-y-1/2"></span><input type="number" value="${data.actual}" class="pl-7"></div>`;
+            actualCell.querySelector('input').oninput = (e) => { data.actual = parseFloat(e.target.value) || 0; updateAll(); };
+            row.appendChild(actualCell);
+
+            // Left Cell (for expenses)
+            if (type === 'expenses') {
+                const leftCell = document.createElement('td');
+                leftCell.className = "text-right py-2 pl-2";
+                leftCell.textContent = formatCurrency(data.budget - data.actual);
+                row.appendChild(leftCell);
+            }
+
+            // Delete Button Cell
+            const deleteCell = document.createElement('td');
+            deleteCell.className = "text-center";
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.innerHTML = '&#10005;'; // Cross icon
+            deleteBtn.onclick = () => {
+                const index = budgetData[type].indexOf(data);
+                if (index > -1) {
+                    budgetData[type].splice(index, 1);
+                    row.remove();
+                    updateAll();
+                }
+            };
+            deleteCell.appendChild(deleteBtn);
+            row.appendChild(deleteCell);
+
+            return row;
+        }
+
+        function renderTables() {
+            const tables = {
+                income: document.getElementById('incomeTable').querySelector('tbody'),
+                bills: document.getElementById('billsTable').querySelector('tbody'),
+                expenses: document.getElementById('expensesTable').querySelector('tbody'),
+                savings: document.getElementById('savingsTable').querySelector('tbody'),
+                debt: document.getElementById('debtTable').querySelector('tbody'),
+            };
+            for (const type in tables) {
+                tables[type].innerHTML = '';
+                budgetData[type].forEach(item => { tables[type].appendChild(createEditableRow(item, type)); });
+            }
+        }
+
+        // --- CALCULATIONS ---
+        function calculateTotals() {
+            const totals = {};
+            for (const type in budgetData) {
+                totals[type] = budgetData[type].reduce((acc, item) => {
+                    acc.budget += item.budget;
+                    acc.actual += item.actual;
+                    return acc;
+                }, { budget: 0, actual: 0 });
+            }
+            return totals;
+        }
+
+        // --- UI UPDATES ---
+        function updateAll() {
+            const totals = calculateTotals();
+            const currencySymbol = document.getElementById('currencySelect').value;
+            
+            document.getElementById('incomeBudgetTotal').textContent = formatCurrency(totals.income.budget);
+            document.getElementById('incomeActualTotal').textContent = formatCurrency(totals.income.actual);
+            document.getElementById('billsBudgetTotal').textContent = formatCurrency(totals.bills.budget);
+            document.getElementById('billsActualTotal').textContent = formatCurrency(totals.bills.actual);
+            document.getElementById('expensesBudgetTotal').textContent = formatCurrency(totals.expenses.budget);
+            document.getElementById('expensesActualTotal').textContent = formatCurrency(totals.expenses.actual);
+            document.getElementById('savingsBudgetTotal').textContent = formatCurrency(totals.savings.budget);
+            document.getElementById('savingsActualTotal').textContent = formatCurrency(totals.savings.actual);
+            document.getElementById('debtBudgetTotal').textContent = formatCurrency(totals.debt.budget);
+            document.getElementById('debtActualTotal').textContent = formatCurrency(totals.debt.actual);
+
+            const expenseRows = document.getElementById('expensesTable').querySelectorAll('tbody tr');
+            budgetData.expenses.forEach((item, index) => {
+                const leftCell = expenseRows[index].cells[3];
+                if(leftCell) leftCell.textContent = formatCurrency(item.budget - item.actual);
+            });
+            document.getElementById('expensesLeftTotal').textContent = formatCurrency(totals.expenses.budget - totals.expenses.actual);
+
+            const leftToBudget = totals.income.budget - totals.bills.budget - totals.expenses.budget - totals.savings.budget - totals.debt.budget;
+            const leftToBudgetElement = document.getElementById('leftToBudget');
+            leftToBudgetElement.textContent = formatCurrency(leftToBudget);
+            leftToBudgetElement.className = `text-4xl font-bold mt-2 ${leftToBudget >= 0 ? 'text-green-600' : 'text-red-600'}`;
+
+            updateDaysLeft();
+            document.querySelectorAll('.currency-symbol').forEach(el => el.textContent = currencySymbol);
+            updateCharts(totals);
+
+            localStorage.setItem('budgetDashboardData', JSON.stringify(budgetData));
+        }
+
+        function updateDaysLeft() {
+             const endDate = new Date(document.getElementById('endDate').value + 'T23:59:59');
+             const today = new Date();
+             if (endDate < today) { document.getElementById('daysLeft').textContent = '0'; return; }
+             const diffTime = Math.abs(endDate - today);
+             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+             document.getElementById('daysLeft').textContent = diffDays;
+        }
+
+        // --- CHARTING ---
+        function createCharts() {
+            Chart.defaults.font.family = "'Inter', sans-serif";
+            
+            charts.budgetVsActual = new Chart(document.getElementById('budgetVsActualChart').getContext('2d'), {
+                type: 'bar',
+                data: { labels: ['Income', 'Bills', 'Expenses', 'Savings', 'Debt'], datasets: [ { label: 'Budget', data: [], backgroundColor: '#a5b4fc', borderRadius: 4 }, { label: 'Actual', data: [], backgroundColor: '#4f46e5', borderRadius: 4 } ] },
+                options: { indexAxis: 'x', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'top' } } }
+            });
+
+            charts.actualBreakdown = new Chart(document.getElementById('actualBreakdownChart').getContext('2d'), {
+                type: 'doughnut',
+                data: { labels: ['Bills', 'Expenses', 'Savings', 'Debt'], datasets: [{ data: [], backgroundColor: ['#fef08a', '#fca5a5', '#86efac', '#fda4af'], borderColor: '#ffffff', borderWidth: 4 }] },
+                options: { responsive: true, maintainAspectRatio: true, aspectRatio: 1, cutout: '70%', plugins: { legend: { display: true, position: 'bottom' } } }
+            });
+
+            charts.incomeSummary = new Chart(document.getElementById('incomeSummaryChart').getContext('2d'), {
+                type: 'doughnut',
+                data: { labels: [], datasets: [{ data: [], backgroundColor: ['#6ee7b7', '#93c5fd', '#fde047', '#fca5a5'], borderColor: '#ffffff', borderWidth: 4 }] },
+                options: { responsive: true, maintainAspectRatio: true, aspectRatio: 1, cutout: '70%', plugins: { legend: { display: true, position: 'bottom' } } }
+            });
+        }
+
+        function updateCharts(totals) {
+            charts.budgetVsActual.data.datasets[0].data = [totals.income.budget, totals.bills.budget, totals.expenses.budget, totals.savings.budget, totals.debt.budget];
+            charts.budgetVsActual.data.datasets[1].data = [totals.income.actual, totals.bills.actual, totals.expenses.actual, totals.savings.actual, totals.debt.actual];
+            charts.budgetVsActual.update();
+
+            charts.actualBreakdown.data.datasets[0].data = [totals.bills.actual, totals.expenses.actual, totals.savings.actual, totals.debt.actual];
+            charts.actualBreakdown.update();
+
+            const incomeData = budgetData.income.filter(i => i.actual > 0);
+            charts.incomeSummary.data.labels = incomeData.map(i => i.category);
+            charts.incomeSummary.data.datasets[0].data = incomeData.map(i => i.actual);
+            charts.incomeSummary.update();
+        }
+        
+        // --- EVENT LISTENERS & INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('currencySelect').onchange = updateAll;
+            document.getElementById('userName').oninput = (e) => { document.getElementById('userNameDisplay').textContent = e.target.value; };
+            document.getElementById('startDate').onchange = () => {
+                const startDate = new Date(document.getElementById('startDate').value + 'T00:00:00');
+                document.getElementById('monthDisplay').textContent = startDate.toLocaleString('default', { month: 'long' });
+                updateDaysLeft();
+            };
+            document.getElementById('endDate').onchange = updateDaysLeft;
+            document.getElementById('startBalance').oninput = updateAll;
+            document.getElementById('resetButton').onclick = () => {
+                if (confirm('Are you sure you want to reset all data to the default template? This cannot be undone.')) {
+                    localStorage.removeItem('budgetDashboardData');
+                    window.location.reload();
+                }
+            };
+
+            // Add item listeners
+            document.getElementById('addIncome').onclick = () => {
+                const newItem = { category: 'New Income', budget: 0, actual: 0 };
+                budgetData.income.push(newItem);
+                document.getElementById('incomeTable').querySelector('tbody').appendChild(createEditableRow(newItem, 'income'));
+                updateAll();
+            };
+            document.getElementById('addBill').onclick = () => {
+                const newItem = { category: 'New Bill', due: '1st', budget: 0, actual: 0 };
+                budgetData.bills.push(newItem);
+                document.getElementById('billsTable').querySelector('tbody').appendChild(createEditableRow(newItem, 'bills'));
+                updateAll();
+            };
+            document.getElementById('addExpense').onclick = () => {
+                const newItem = { category: 'New Expense', budget: 0, actual: 0 };
+                budgetData.expenses.push(newItem);
+                document.getElementById('expensesTable').querySelector('tbody').appendChild(createEditableRow(newItem, 'expenses'));
+                updateAll();
+            };
+            document.getElementById('addSaving').onclick = () => {
+                const newItem = { category: 'New Saving Goal', budget: 0, actual: 0 };
+                budgetData.savings.push(newItem);
+                document.getElementById('savingsTable').querySelector('tbody').appendChild(createEditableRow(newItem, 'savings'));
+                updateAll();
+            };
+            document.getElementById('addDebt').onclick = () => {
+                const newItem = { category: 'New Debt', budget: 0, actual: 0 };
+                budgetData.debt.push(newItem);
+                document.getElementById('debtTable').querySelector('tbody').appendChild(createEditableRow(newItem, 'debt'));
+                updateAll();
+            };
+
+            renderTables();
+            createCharts();
+            updateAll();
+        });
+    </script>
+</body>
+</html>
